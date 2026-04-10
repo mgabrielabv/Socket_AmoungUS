@@ -26,11 +26,9 @@ public class ManejadorCliente extends Thread {
 
                 if (comando.equals("INIT")) {
                     this.jugador = new Jugador(String.valueOf(this.getId()), partes[1]);
-                } else if (comando.equals("MOVE") && jugador != null) {
-                    jugador.x = Integer.parseInt(partes[1]);
-                    jugador.y = Integer.parseInt(partes[2]);
+                    enviar("INIT," + partes[1]);
+                    ServidorSocket.broadcast("INIT," + partes[1], this);
                 }
-
                 ServidorSocket.broadcast(entrada, this);
             }
         } catch (IOException e) {

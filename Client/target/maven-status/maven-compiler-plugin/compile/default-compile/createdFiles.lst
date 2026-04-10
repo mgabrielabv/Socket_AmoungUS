@@ -1,0 +1,11 @@
+com\MariaBermudez\Cliente\Vista\CanvasJuego$JugadorVisual.class
+com\MariaBermudez\Cliente\Vista\VentanaJuego$JugadorRemoto.class
+com\MariaBermudez\Cliente\Red\ClienteSocket.class
+com\MariaBermudez\Cliente\Controlador\ControladorJuego.class
+com\MariaBermudez\Cliente\Vista\VentanaJuego.class
+com\MariaBermudez\Cliente\MainCliente.class
+com\MariaBermudez\Cliente\Red\ClienteSocket$ReceptorMensajes.class
+com\MariaBermudez\Cliente\Vista\CanvasJuego.class
+com\MariaBermudez\Cliente\Vista\VentanaJuego$1.class
+com\MariaBermudez\Cliente\Vista\VentanaJuego$2.class
+com\MariaBermudez\Cliente\Vista\VentanaLogin.class
