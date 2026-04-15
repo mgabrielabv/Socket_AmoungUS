@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.List;
 
 public class ServidorSocket {
     private int puerto;
@@ -34,5 +35,19 @@ public class ServidorSocket {
                 c.enviar(mensaje);
             }
         }
+    }
+
+    public static void enviarA(String mensaje, ManejadorCliente destinatario) {
+        destinatario.enviar(mensaje);
+    }
+
+    public static List<String> getJugadoresExistentes(ManejadorCliente excluir) {
+        List<String> jugadores = new ArrayList<>();
+        for (ManejadorCliente c : clientes) {
+            if (c != excluir && c.getJugador() != null) {
+                jugadores.add(c.getJugador().id + "," + c.getJugador().color + "," + c.getJugador().x + "," + c.getJugador().y);
+            }
+        }
+        return jugadores;
     }
 }

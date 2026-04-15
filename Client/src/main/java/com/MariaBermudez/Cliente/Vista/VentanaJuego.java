@@ -19,39 +19,33 @@ public class VentanaJuego extends JFrame implements ClienteSocket.ReceptorMensaj
     private String miColor;
     private String miNombre;
 
-    // Mapa de jugadores conectados
     private Map<String, JugadorRemoto> jugadores = new ConcurrentHashMap<>();
 
     public VentanaJuego(String nombre, String color, String host, int puerto) {
         this.miNombre = nombre;
         this.miColor = color;
 
-        setTitle(" Among Us - " + nombre + " (" + color + ")");
+        setTitle("Among Us - " + nombre + " (" + color + ")");
         setSize(1000, 700);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // Panel principal
         setLayout(new BorderLayout());
 
-        // Canvas de juego
         canvas = new CanvasJuego();
         canvas.setBackground(new Color(20, 20, 30));
         add(canvas, BorderLayout.CENTER);
 
-        // Panel lateral
         JPanel panelLateral = new JPanel(new BorderLayout());
         panelLateral.setPreferredSize(new Dimension(250, 700));
         panelLateral.setBackground(new Color(40, 40, 50));
 
-        // Título lateral
-        JLabel lblTitulo = new JLabel("📡 CONSOLA DE RED", SwingConstants.CENTER);
+        JLabel lblTitulo = new JLabel("CONSOLA DE RED", SwingConstants.CENTER);
         lblTitulo.setForeground(Color.WHITE);
         lblTitulo.setFont(new Font("Monospaced", Font.BOLD, 14));
         lblTitulo.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 5));
         panelLateral.add(lblTitulo, BorderLayout.NORTH);
 
-        // Área de log
         areaLog = new JTextArea();
         areaLog.setEditable(false);
         areaLog.setBackground(new Color(20, 20, 30));
@@ -61,16 +55,14 @@ public class VentanaJuego extends JFrame implements ClienteSocket.ReceptorMensaj
         scrollLog.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         panelLateral.add(scrollLog, BorderLayout.CENTER);
 
-        // Panel inferior con estado
         JPanel panelInferior = new JPanel(new BorderLayout());
         panelInferior.setBackground(new Color(40, 40, 50));
-        lblEstado = new JLabel(" Conectando...");
+        lblEstado = new JLabel("Conectando...");
         lblEstado.setForeground(Color.YELLOW);
         lblEstado.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         panelInferior.add(lblEstado, BorderLayout.CENTER);
 
-        // Botón desconectar
-        JButton btnDesconectar = new JButton(" Desconectar");
+        JButton btnDesconectar = new JButton("Desconectar");
         btnDesconectar.setBackground(new Color(200, 50, 50));
         btnDesconectar.setForeground(Color.WHITE);
         btnDesconectar.setFocusPainted(false);
@@ -81,16 +73,12 @@ public class VentanaJuego extends JFrame implements ClienteSocket.ReceptorMensaj
 
         add(panelLateral, BorderLayout.EAST);
 
-        // Conectar al servidor
         conectarAlServidor(host, puerto);
 
-        // Iniciar controlador
         controlador = new ControladorJuego(this, canvas);
 
-        // Configurar teclas
         configurarTeclas();
 
-        // Al cerrar ventana
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -103,19 +91,20 @@ public class VentanaJuego extends JFrame implements ClienteSocket.ReceptorMensaj
         socket = new ClienteSocket(host, puerto, this);
 
         if (socket.estaConectado()) {
-            // Enviar INIT
-            socket.enviar("INIT," + miColor);
-            miId = String.valueOf(System.currentTimeMillis()); // ID temporal
-            jugadores.put(miId, new JugadorRemoto(miId, miColor, 400, 300));
 
-            lblEstado.setText(" Conectado - " + host + ":" + puerto);
+            miId = "TEMP_" + System.currentTimeMillis();
+
+
+            socket.enviar("INIT," + miColor);
+
+            lblEstado.setText("[OK] Conectado - " + host + ":" + puerto);
             lblEstado.setForeground(Color.GREEN);
-            agregarLog(" Conectado al servidor");
-            agregarLog(" Jugador: " + miNombre + " (" + miColor + ")");
+            agregarLog("[OK] Conectado al servidor");
+            agregarLog("[INFO] Esperando confirmacion del servidor...");
         } else {
-            lblEstado.setText(" Error de conexión");
+            lblEstado.setText("[ERROR] Error de conexion");
             lblEstado.setForeground(Color.RED);
-            agregarLog(" No se pudo conectar al servidor");
+            agregarLog("[ERROR] No se pudo conectar al servidor");
         }
     }
 
@@ -128,20 +117,12 @@ public class VentanaJuego extends JFrame implements ClienteSocket.ReceptorMensaj
             }
             return false;
         });
-
-        canvas.addMouseMotionListener(new MouseMotionAdapter() {
-            @Override
-            public void mouseMoved(MouseEvent e) {
-                // Opcional: apuntar con el mouse
-            }
-        });
     }
 
     public void enviarMovimiento(int x, int y) {
         if (socket != null && socket.estaConectado()) {
             socket.enviar("MOVE," + x + "," + y);
 
-            // Actualizar posición local
             JugadorRemoto yo = jugadores.get(miId);
             if (yo != null) {
                 yo.x = x;
@@ -158,35 +139,72 @@ public class VentanaJuego extends JFrame implements ClienteSocket.ReceptorMensaj
 
         SwingUtilities.invokeLater(() -> {
             if (comando.equals("INIT")) {
-                String color = partes[1];
 
-                // Verificar si es nuestro color
-                if (color.equals(miColor)) {
-                    // Es nuestro jugador - usar miId
-                    jugadores.put(miId, new JugadorRemoto(miId, color, 400, 300));
-                    canvas.agregarJugador(miId, color, 400, 300);
-                    agregarLog("Jugador creado: " + color);
-                } else {
-                    // Es otro jugador
-                    String id = "J" + System.currentTimeMillis();
-                    jugadores.put(id, new JugadorRemoto(id, color, 400, 300));
-                    canvas.agregarJugador(id, color, 400, 300);
-                    agregarLog(" Nuevo jugador: " + color);
+                if (partes.length >= 5) {
+                    String id = partes[1];
+                    String color = partes[2];
+                    int x = Integer.parseInt(partes[3]);
+                    int y = Integer.parseInt(partes[4]);
+
+                    if (color.equals(miColor) && miId.startsWith("TEMP_")) {
+
+                        setMiId(id);
+                        agregarLog("[OK] ID asignado: " + id);
+
+                        jugadores.put(id, new JugadorRemoto(id, color, x, y));
+                        canvas.agregarJugador(id, color, x, y);
+                        agregarLog("[OK] Mi jugador registrado: " + color);
+                    } else if (!id.equals(miId)) {
+
+                        jugadores.put(id, new JugadorRemoto(id, color, x, y));
+                        canvas.agregarJugador(id, color, x, y);
+                        agregarLog("[INFO] Jugador conectado: " + color + " (ID: " + id + ")");
+                    }
+                }
+
+            } else if (comando.equals("JUGADOR_EXISTENTE")) {
+
+                if (partes.length >= 5) {
+                    String id = partes[1];
+                    String color = partes[2];
+                    int x = Integer.parseInt(partes[3]);
+                    int y = Integer.parseInt(partes[4]);
+
+                    if (!id.equals(miId) && !jugadores.containsKey(id)) {
+                        jugadores.put(id, new JugadorRemoto(id, color, x, y));
+                        canvas.agregarJugador(id, color, x, y);
+                        agregarLog("[INFO] Jugador existente: " + color + " (ID: " + id + ")");
+                    }
                 }
 
             } else if (comando.equals("MOVE")) {
-                int x = Integer.parseInt(partes[1]);
-                int y = Integer.parseInt(partes[2]);
+                // Formato: MOVE,id,x,y
+                if (partes.length >= 4) {
+                    String id = partes[1];
+                    int x = Integer.parseInt(partes[2]);
+                    int y = Integer.parseInt(partes[3]);
 
-                // Actualizar posición de otros jugadores
-                for (Map.Entry<String, JugadorRemoto> entry : jugadores.entrySet()) {
-                    if (!entry.getKey().equals(miId)) {
-                        JugadorRemoto j = entry.getValue();
-                        j.x = x;
-                        j.y = y;
-                        canvas.actualizarPosicion(entry.getKey(), x, y);
-                        agregarLog(" " + j.color + " se movió a (" + x + "," + y + ")");
-                        break;
+                    if (!id.equals(miId)) {
+                        JugadorRemoto j = jugadores.get(id);
+                        if (j != null) {
+                            j.x = x;
+                            j.y = y;
+                            canvas.actualizarPosicion(id, x, y);
+
+                            if (Math.random() < 0.1) {
+                                agregarLog("[MOVE] " + j.color + " se movio a (" + x + "," + y + ")");
+                            }
+                        }
+                    }
+                }
+
+            } else if (comando.equals("DESCONECTAR")) {
+                if (partes.length >= 2) {
+                    String id = partes[1];
+                    JugadorRemoto j = jugadores.remove(id);
+                    if (j != null) {
+                        canvas.removerJugador(id);
+                        agregarLog("[INFO] Jugador desconectado: " + j.color);
                     }
                 }
             }
@@ -194,6 +212,7 @@ public class VentanaJuego extends JFrame implements ClienteSocket.ReceptorMensaj
             canvas.repaint();
         });
     }
+
     private void agregarLog(String mensaje) {
         areaLog.append(mensaje + "\n");
         areaLog.setCaretPosition(areaLog.getDocument().getLength());
@@ -203,7 +222,14 @@ public class VentanaJuego extends JFrame implements ClienteSocket.ReceptorMensaj
         if (socket != null) {
             socket.cerrar();
         }
+        if (controlador != null) {
+            controlador.detener();
+        }
         dispose();
+    }
+
+    public void setMiId(String id) {
+        this.miId = id;
     }
 
     public Map<String, JugadorRemoto> getJugadores() {
@@ -214,7 +240,6 @@ public class VentanaJuego extends JFrame implements ClienteSocket.ReceptorMensaj
         return miId;
     }
 
-    // Clase interna para jugadores remotos
     public static class JugadorRemoto {
         public String id;
         public String color;

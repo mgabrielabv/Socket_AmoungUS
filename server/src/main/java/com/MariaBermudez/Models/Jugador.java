@@ -11,8 +11,8 @@ public class Jugador implements Serializable {
     public Jugador(String id, String color) {
         this.id = id;
         this.color = color;
-        this.x = 100;
-        this.y = 100;
+        this.x = 400;
+        this.y = 300;
         this.estado = "quieto";
     }
 }

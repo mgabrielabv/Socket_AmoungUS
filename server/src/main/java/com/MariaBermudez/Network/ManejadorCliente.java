@@ -25,14 +25,29 @@ public class ManejadorCliente extends Thread {
                 String comando = partes[0];
 
                 if (comando.equals("INIT")) {
-                    this.jugador = new Jugador(String.valueOf(this.getId()), partes[1]);
-                    enviar("INIT," + partes[1]);
-                    ServidorSocket.broadcast("INIT," + partes[1], this);
+                    String color = partes[1];
+                    String id = "J" + this.getId();
+                    this.jugador = new Jugador(id, color);
+
+                    enviar("INIT," + id + "," + color + ",400,300");
+
+                    ServidorSocket.broadcast("INIT," + id + "," + color + ",400,300", this);
+
+                    for (String jugadorExistente : ServidorSocket.getJugadoresExistentes(this)) {
+                        enviar("JUGADOR_EXISTENTE," + jugadorExistente);
+                    }
+
+                } else if (comando.equals("MOVE") && jugador != null) {
+                    int x = Integer.parseInt(partes[1]);
+                    int y = Integer.parseInt(partes[2]);
+                    jugador.x = x;
+                    jugador.y = y;
+
+                    ServidorSocket.broadcast("MOVE," + jugador.id + "," + x + "," + y, this);
                 }
-                ServidorSocket.broadcast(entrada, this);
             }
         } catch (IOException e) {
-            System.out.println("Desconexión detectada");
+            System.out.println("Desconexion detectada: " + (jugador != null ? jugador.id : "desconocido"));
         } finally {
             cerrarTodo();
         }
@@ -42,9 +57,16 @@ public class ManejadorCliente extends Thread {
         out.println(mensaje);
     }
 
+    public Jugador getJugador() {
+        return jugador;
+    }
+
     private void cerrarTodo() {
         try {
             ServidorSocket.clientes.remove(this);
+            if (jugador != null) {
+                ServidorSocket.broadcast("DESCONECTAR," + jugador.id, this);
+            }
             if (socket != null) socket.close();
         } catch (IOException e) {
             e.printStackTrace();
