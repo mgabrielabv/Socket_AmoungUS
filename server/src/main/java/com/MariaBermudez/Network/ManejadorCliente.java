@@ -1,5 +1,6 @@
 package com.MariaBermudez.Network;
 import com.MariaBermudez.DataBase.JugadorDAO;
+import com.MariaBermudez.DataBase.PartidaDAO;
 import com.MariaBermudez.Models.Jugador;
 import java.io.*;
 import java.net.Socket;
@@ -10,8 +11,10 @@ public class ManejadorCliente extends Thread {
     private BufferedReader in;
     private Jugador jugador;
     private final JugadorDAO jugadorDAO = new JugadorDAO();
+    private final PartidaDAO partidaDAO = new PartidaDAO();
     private boolean autenticado = false;
     private String colorAutenticado;
+    private String nombreAutenticado;
 
     public ManejadorCliente(Socket socket) {
         this.socket = socket;
@@ -47,12 +50,14 @@ public class ManejadorCliente extends Thread {
                     if (jugadorBD != null) {
                         autenticado = true;
                         colorAutenticado = jugadorBD.getColor();
+                        nombreAutenticado = nombre;
                         enviar("AUTH_OK," + nombre + "," + colorAutenticado);
                     } else {
                         boolean registrado = jugadorDAO.registrarJugador(nombre, color, contrasena);
                         if (registrado) {
                             autenticado = true;
                             colorAutenticado = color;
+                            nombreAutenticado = nombre;
                             enviar("AUTH_OK," + nombre + "," + colorAutenticado);
                         } else {
                             enviar("AUTH_ERROR,CREDENCIALES_O_NOMBRE_EN_USO");
@@ -80,6 +85,10 @@ public class ManejadorCliente extends Thread {
 
                     for (String jugadorExistente : ServidorSocket.getJugadoresExistentes(this)) {
                         enviar("JUGADOR_EXISTENTE," + jugadorExistente);
+                    }
+
+                    if (ServidorSocket.partidaActualId != -1 && nombreAutenticado != null) {
+                        partidaDAO.agregarJugador(ServidorSocket.partidaActualId, nombreAutenticado);
                     }
 
                 } else if (comando.equals("MOVE") && jugador != null) {

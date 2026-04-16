@@ -1,0 +1,20 @@
+Table jugadores {
+  id int [primary key, increment]
+  nombre varchar(50) [unique, not null]
+  color varchar(20) [not null]
+  contrasena varchar(100) [not null]
+}
+
+Table partidas {
+  id int [primary key, increment]
+  fecha varchar(20) [not null]
+  cantidad_jugadores int
+}
+
+Table jugadores_partida {
+  id_partida int
+  nombre_jugador varchar(50)
+}
+
+Ref: partidas.id < jugadores_partida.id_partida
+Ref: jugadores.nombre < jugadores_partida.nombre_jugador
