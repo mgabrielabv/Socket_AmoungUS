@@ -13,7 +13,6 @@ public class ConexionBD {
     }
 
     private static String buildJdbcUrl() {
-        // Priority: complete URL from env; fallback to host/port/db parts.
         String url = System.getenv("DB_URL");
         if (url != null && !url.isBlank()) {
             return url;
