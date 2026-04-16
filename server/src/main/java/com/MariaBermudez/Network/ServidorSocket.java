@@ -37,9 +37,6 @@ public class ServidorSocket {
         }
     }
 
-    public static void enviarA(String mensaje, ManejadorCliente destinatario) {
-        destinatario.enviar(mensaje);
-    }
 
     public static List<String> getJugadoresExistentes(ManejadorCliente excluir) {
         List<String> jugadores = new ArrayList<>();

@@ -10,7 +10,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CanvasJuego extends JPanel {
     private Map<String, JugadorVisual> jugadores = new ConcurrentHashMap<>();
     private Image fondo;
-    private boolean fondoCargado = false;
 
     private static final String URL_FONDO =
             "https://i.pinimg.com/originals/ec/01/62/ec01621b4abc17edfba4689f691be582.jpg";
@@ -25,12 +24,10 @@ public class CanvasJuego extends JPanel {
             URL url = new URL(URL_FONDO);
             ImageIcon icono = new ImageIcon(url);
             fondo = icono.getImage();
-            fondoCargado = true;
             System.out.println("[OK] Fondo cargado correctamente");
         } catch (Exception e) {
             System.err.println("[ERROR] No se pudo cargar el fondo: " + e.getMessage());
             fondo = crearFondoRespaldo();
-            fondoCargado = true;
         }
     }
 

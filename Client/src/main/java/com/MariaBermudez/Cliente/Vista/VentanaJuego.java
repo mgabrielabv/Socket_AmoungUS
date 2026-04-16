@@ -18,11 +18,13 @@ public class VentanaJuego extends JFrame implements ClienteSocket.ReceptorMensaj
     private String miId;
     private String miColor;
     private String miNombre;
+    private String miPassword;
 
     private Map<String, JugadorRemoto> jugadores = new ConcurrentHashMap<>();
 
-    public VentanaJuego(String nombre, String color, String host, int puerto) {
+    public VentanaJuego(String nombre, String password, String color, String host, int puerto) {
         this.miNombre = nombre;
+        this.miPassword = password;
         this.miColor = color;
 
         setTitle("Among Us - " + nombre + " (" + color + ")");
@@ -94,13 +96,12 @@ public class VentanaJuego extends JFrame implements ClienteSocket.ReceptorMensaj
 
             miId = "TEMP_" + System.currentTimeMillis();
 
-
-            socket.enviar("INIT," + miColor);
+            socket.enviar("AUTH," + miNombre + "," + miPassword + "," + miColor);
 
             lblEstado.setText("[OK] Conectado - " + host + ":" + puerto);
             lblEstado.setForeground(Color.GREEN);
             agregarLog("[OK] Conectado al servidor");
-            agregarLog("[INFO] Esperando confirmacion del servidor...");
+            agregarLog("[INFO] Autenticando usuario...");
         } else {
             lblEstado.setText("[ERROR] Error de conexion");
             lblEstado.setForeground(Color.RED);
@@ -161,6 +162,27 @@ public class VentanaJuego extends JFrame implements ClienteSocket.ReceptorMensaj
                         agregarLog("[INFO] Jugador conectado: " + color + " (ID: " + id + ")");
                     }
                 }
+
+            } else if (comando.equals("AUTH_OK")) {
+                if (partes.length >= 3) {
+                    miNombre = partes[1];
+                    miColor = partes[2];
+                }
+                agregarLog("[OK] Autenticacion correcta para " + miNombre);
+                socket.enviar("INIT," + miColor);
+
+            } else if (comando.equals("AUTH_ERROR")) {
+                String detalle = partes.length > 1 ? partes[1] : "DESCONOCIDO";
+                lblEstado.setText("[ERROR] Auth fallida");
+                lblEstado.setForeground(Color.RED);
+                agregarLog("[ERROR] Autenticacion fallida: " + detalle);
+                JOptionPane.showMessageDialog(this, "No se pudo autenticar: " + detalle, "Error", JOptionPane.ERROR_MESSAGE);
+                desconectar();
+
+            } else if (comando.equals("AUTH_REQUIRED")) {
+                lblEstado.setText("[ERROR] Debes autenticarte");
+                lblEstado.setForeground(Color.RED);
+                agregarLog("[ERROR] El servidor requiere autenticacion");
 
             } else if (comando.equals("JUGADOR_EXISTENTE")) {
 
@@ -232,9 +254,6 @@ public class VentanaJuego extends JFrame implements ClienteSocket.ReceptorMensaj
         this.miId = id;
     }
 
-    public Map<String, JugadorRemoto> getJugadores() {
-        return jugadores;
-    }
 
     public String getMiId() {
         return miId;

@@ -129,7 +129,7 @@ public class VentanaLogin extends JFrame {
         String color = colorSeleccionado.split(" ")[1];
 
         // Abrir ventana de juego
-        VentanaJuego juego = new VentanaJuego(nombre, color, host, puerto);
+        VentanaJuego juego = new VentanaJuego(nombre, password, color, host, puerto);
         juego.setVisible(true);
         this.dispose();
     }

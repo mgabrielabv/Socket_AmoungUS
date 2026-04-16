@@ -6,14 +6,32 @@ import java.sql.SQLException;
 
 public class ConexionBD {
     private static Connection conexion = null;
-    private static final String URL = "jdbc:postgresql://localhost:5433/amongus";
-    private static final String USER = "admin";
-    private static final String PASS = "admin123";
+
+    private static String getEnvOrDefault(String key, String defaultValue) {
+        String value = System.getenv(key);
+        return (value == null || value.isBlank()) ? defaultValue : value;
+    }
+
+    private static String buildJdbcUrl() {
+        // Priority: complete URL from env; fallback to host/port/db parts.
+        String url = System.getenv("DB_URL");
+        if (url != null && !url.isBlank()) {
+            return url;
+        }
+
+        String host = getEnvOrDefault("DB_HOST", "localhost");
+        String port = getEnvOrDefault("DB_PORT", "5433");
+        String name = getEnvOrDefault("DB_NAME", "amongus");
+        return "jdbc:postgresql://" + host + ":" + port + "/" + name;
+    }
 
     public static Connection getConexion() {
         try {
             if (conexion == null || conexion.isClosed()) {
-                conexion = DriverManager.getConnection(URL, USER, PASS);
+                String url = buildJdbcUrl();
+                String user = getEnvOrDefault("DB_USER", "admin");
+                String pass = getEnvOrDefault("DB_PASSWORD", "admin123");
+                conexion = DriverManager.getConnection(url, user, pass);
             }
         } catch (SQLException e) {
             e.printStackTrace();

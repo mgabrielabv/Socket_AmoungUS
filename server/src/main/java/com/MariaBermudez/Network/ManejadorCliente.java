@@ -1,4 +1,5 @@
 package com.MariaBermudez.Network;
+import com.MariaBermudez.DataBase.JugadorDAO;
 import com.MariaBermudez.Models.Jugador;
 import java.io.*;
 import java.net.Socket;
@@ -8,6 +9,9 @@ public class ManejadorCliente extends Thread {
     private PrintWriter out;
     private BufferedReader in;
     private Jugador jugador;
+    private final JugadorDAO jugadorDAO = new JugadorDAO();
+    private boolean autenticado = false;
+    private String colorAutenticado;
 
     public ManejadorCliente(Socket socket) {
         this.socket = socket;
@@ -24,8 +28,49 @@ public class ManejadorCliente extends Thread {
                 String[] partes = entrada.split(",");
                 String comando = partes[0];
 
-                if (comando.equals("INIT")) {
-                    String color = partes[1];
+                if (comando.equals("AUTH")) {
+                    if (partes.length < 4) {
+                        enviar("AUTH_ERROR,FORMATO_INVALIDO");
+                        continue;
+                    }
+
+                    String nombre = partes[1].trim();
+                    String contrasena = partes[2].trim();
+                    String color = partes[3].trim();
+
+                    if (nombre.isEmpty() || contrasena.isEmpty() || color.isEmpty()) {
+                        enviar("AUTH_ERROR,DATOS_INVALIDOS");
+                        continue;
+                    }
+
+                    com.MariaBermudez.DataBase.Jugador jugadorBD = jugadorDAO.iniciarSesion(nombre, contrasena);
+                    if (jugadorBD != null) {
+                        autenticado = true;
+                        colorAutenticado = jugadorBD.getColor();
+                        enviar("AUTH_OK," + nombre + "," + colorAutenticado);
+                    } else {
+                        boolean registrado = jugadorDAO.registrarJugador(nombre, color, contrasena);
+                        if (registrado) {
+                            autenticado = true;
+                            colorAutenticado = color;
+                            enviar("AUTH_OK," + nombre + "," + colorAutenticado);
+                        } else {
+                            enviar("AUTH_ERROR,CREDENCIALES_O_NOMBRE_EN_USO");
+                        }
+                    }
+
+                } else if (comando.equals("INIT")) {
+                    if (!autenticado) {
+                        enviar("AUTH_REQUIRED");
+                        continue;
+                    }
+
+                    if (partes.length < 2 && colorAutenticado == null) {
+                        enviar("INIT_ERROR,FORMATO_INVALIDO");
+                        continue;
+                    }
+
+                    String color = colorAutenticado != null ? colorAutenticado : partes[1];
                     String id = "J" + this.getId();
                     this.jugador = new Jugador(id, color);
 
@@ -38,6 +83,11 @@ public class ManejadorCliente extends Thread {
                     }
 
                 } else if (comando.equals("MOVE") && jugador != null) {
+                    if (!autenticado) {
+                        enviar("AUTH_REQUIRED");
+                        continue;
+                    }
+
                     int x = Integer.parseInt(partes[1]);
                     int y = Integer.parseInt(partes[2]);
                     jugador.x = x;
